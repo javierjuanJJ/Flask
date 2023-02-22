@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from flask import Flask, render_template, url_for
+from flask import Flask, render_template, url_for, request, redirect
 from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -13,10 +13,24 @@ class Todo(db.Model):
     completed = db.Column(db.Integer, default=0)
     date_created = db.Column(db.DateTime, default=datetime.utcnow)
 
-@app.route('/')
-def hello_world():  # put application's code here
-    return render_template('index.html')
+    def __repr__(self):
+        return f'<Task {self.id}>'
 
+@app.route('/', methods=['POST', 'GET'])
+def hello_world():  # put application's code here
+    if request.method == 'POST':
+        task_content = request.form['content']
+        new_task = Todo(content = task_content)
+
+        try:
+            db.session.add(new_task)
+            db.session.commit()
+            return redirect('/')
+        except:
+            return 'There was an issue adding your task'
+    else:
+        tasks = Todo.query.order_by(Todo.date_created).all()
+        return render_template('index.html', tasks=tasks)
 
 if __name__ == '__main__':
     app.run()
